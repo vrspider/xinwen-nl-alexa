@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import os
 import json
+import shutil
 
 # 添加当前目录到 path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -80,7 +81,13 @@ def main():
     # uncomment the following line when you want to auto-deploy
     # don't deploy if there are no new items to avoid unnecessary redeployments
     if len(news) > 0:
-        os.system("vercel --prod")  # this line is indented to run under the if
+        # deployment: prefer system vercel binary but fallback to npx if not installed
+        import shutil
+        vercel_path = shutil.which("vercel")
+        if not vercel_path:
+            print("⚠️  vercel CLI not found in PATH, attempting npx...")
+            vercel_path = "npx vercel"
+        os.system(f"{vercel_path} --prod")  # execute the chosen command
 
 
 if __name__ == "__main__":

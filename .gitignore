@@ -5,3 +5,6 @@ client_secrets.json
 output/*
 __pycache__
 .env*.local
+cron.log
+
+.DS_Store

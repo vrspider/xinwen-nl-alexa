@@ -51,7 +51,7 @@ def format_news_for_speech(news_list: List[Dict[str, str]], max_items: int = 10)
     text = f"欢迎收听{today}的荷兰新闻精选。\n\n"
     
     for i, news in enumerate(news_list[:max_items], 1):
-        text += f"第{i}条：{news['title']}。"
+        text += f"{i}：{news['title']}。"
         if news['content']:
             # 取内容前100字
             content_short = news['content'][:100]
