@@ -57,17 +57,21 @@ def main():
     # ensure we treat it as a Path for subsequent operations
     mp3_path = Path(mp3_path)
 
-    
-    
     # 4. 上传到 Google Drive
-    # print("☁️  上传至 Google Drive...")
-    # try:
-    #     path = upload_to_gdrive(str(mp3_path))
-    #     print(f"   已上传: {path}")
-    # except Exception as e:
-    #     print(f"   上传失败: {e}")
+    print("☁️  上传至 Google Drive...")
+    try:
+        path = upload_to_gdrive(str(mp3_path))
+        print(f"   已上传: {path}")
+    except Exception as e:
+        print(f"   上传失败: {e}")
     
-    # print(f"[{datetime.now()}] 完成!")
+    print(f"[{datetime.now()}] 完成!")
+
+    # only latest 2 mp3 files in output dir to save space, delete older ones
+    mp3_files = sorted(OUTPUT_DIR.glob("*.mp3"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for f in mp3_files[2:]:
+        f.unlink()
+        print(f"   已删除旧文件: {f}")
 
     # 5. copy mp3 to public/audio for Vercel hosting
     public_audio_dir = Path(__file__).parent / "public" / "audio"
