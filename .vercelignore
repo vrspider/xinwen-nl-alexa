@@ -1,0 +1,25 @@
+# ignore everything except .vercelignore, vercel.json, public and api
+*
+!/.vercelignore
+!/vercel.json
+!/public
+!/public/**
+!/api
+!/api/**
+
+# local Python stuff we don’t want uploaded
+venv/
+output/
+cron.log
+
+# credential/secret files
+credentials.json
+client_secrets.json
+.env*
+*.key
+*.pem
+
+# additional ignores
+.keys
+__pycache__
+.DS_Store

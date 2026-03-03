@@ -1,10 +1,16 @@
 .vercel
 public/audio
 .keys
+# credential files
 client_secrets.json
+credentials.json
+*.key
+*.pem
+.env*
+
+# generated output and caches
 output/*
 __pycache__
-.env*.local
 cron.log
 
 .DS_Store

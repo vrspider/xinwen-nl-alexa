@@ -43,8 +43,8 @@ export default function handler(
     req: VercelRequest,
     res: VercelResponse
 ) {
-    // scan the output directory for mp3 files
-    const outputDir = path.join(process.cwd(), "output");
+    // scan the public/audio directory for mp3 files
+    const outputDir = path.join(process.cwd(), "public", "audio");
     let items: Array<any> = [];
     try {
         const files = fs.readdirSync(outputDir);
