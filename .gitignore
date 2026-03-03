@@ -1,2 +1,7 @@
 .vercel
 public/audio
+.keys
+client_secrets.json
+output/*
+__pycache__
+.env*.local
