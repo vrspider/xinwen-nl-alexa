@@ -11,7 +11,7 @@ function buildRss(items: Array<{
     guid: string;
 }>) {
     const now = new Date().toUTCString();
-    const channelTitle = "Xinwen 新闻";
+    const channelTitle = "Xinwen 荷兰新闻";
     const channelLink = "https://xinwen.nl/";
     const channelDescription = "荷兰新闻每日播报";
 
@@ -23,14 +23,31 @@ function buildRss(items: Array<{
     xml += `<description>${channelDescription}</description>\n`;
     xml += `<language>zh-cn</language>\n`;
     xml += `<pubDate>${now}</pubDate>\n`;
+    // itunes specific metadata for Apple Podcasts
+    xml += `<itunes:author>Xinwen</itunes:author>\n`;
+    xml += `<itunes:owner>\n`;
+    xml += `<itunes:name>Xinwen</itunes:name>\n`;
+    xml += `<itunes:email>podcast@example.com</itunes:email>\n`;
+    xml += `</itunes:owner>\n`;
+    xml += `<itunes:summary><![CDATA[${channelDescription}]]></itunes:summary>\n`;
+    xml += `<itunes:explicit>no</itunes:explicit>\n`;
+    xml += `<itunes:category text="News"/>\n`;
+    // optional: an image if you host one
+    xml += `<itunes:image href="https://xinwen-alexa.vercel.app/logo.jpg"/>\n`;
 
     items.forEach(item => {
         xml += `<item>\n`;
         xml += `<title><![CDATA[${item.title}]]></title>\n`;
+        // include iTunes-specific subtitles/summary
+        xml += `<itunes:subtitle><![CDATA[${item.description}]]></itunes:subtitle>\n`;
+        xml += `<itunes:summary><![CDATA[${item.description}]]></itunes:summary>\n`;
         xml += `<description><![CDATA[${item.description}]]></description>\n`;
-        xml += `<enclosure url="${item.url}" type="audio/mpeg" length="0"/>\n`;
+        const lengthAttr = item.length ? item.length.toString() : "0";
+        xml += `<enclosure url="${item.url}" type="audio/mpeg" length="${lengthAttr}"/>\n`;
+        xml += `<link>${item.url}</link>\n`;  // link to episode details (same as media)
         xml += `<guid>${item.guid}</guid>\n`;
         xml += `<pubDate>${item.pubDate}</pubDate>\n`;
+        xml += `<itunes:explicit>no</itunes:explicit>\n`;
         xml += `</item>\n`;
     });
 
@@ -55,12 +72,18 @@ export default function handler(
                 const datePart = path.basename(f, ".mp3");
                 const pub = new Date(datePart).toUTCString();
                 const url = `https://xinwen-alexa.vercel.app/audio/${f}`;
+                let size = 0;
+                try {
+                    const stat = fs.statSync(path.join(outputDir, f));
+                    size = stat.size;
+                } catch {}
                 items.push({
                     title: `Xinwen 新闻 ${datePart}`,
                     description: `每天的新闻摘要，生成于 ${datePart}`,
                     url,
                     pubDate: pub,
-                    guid: url
+                    guid: url,
+                    length: size
                 });
             });
     } catch (e) {
