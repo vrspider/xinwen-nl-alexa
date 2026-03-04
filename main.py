@@ -57,7 +57,7 @@ def main():
     # ensure we treat it as a Path for subsequent operations
     mp3_path = Path(mp3_path)
 
-    # 4. 上传到 Google Drive
+    # 4. 上传到 Google Drive , and overwrite the existing file if it exists (Drive API will handle deduplication by content)
     print("☁️  上传至 Google Drive...")
     try:
         path = upload_to_gdrive(str(mp3_path))
@@ -67,18 +67,18 @@ def main():
     
     print(f"[{datetime.now()}] 完成!")
 
-    # only latest 2 mp3 files in output dir to save space, delete older ones
-    mp3_files = sorted(OUTPUT_DIR.glob("*.mp3"), key=lambda f: f.stat().st_mtime, reverse=True)
-    for f in mp3_files[2:]:
-        f.unlink()
-        print(f"   已删除旧文件: {f}")
-
     # 5. copy mp3 to public/audio for Vercel hosting
     public_audio_dir = Path(__file__).parent / "public" / "audio"
     public_audio_dir.mkdir(parents=True, exist_ok=True)
     target_path = public_audio_dir / mp3_path.name
     target_path.write_bytes(mp3_path.read_bytes())
     print(f"   已复制到: {target_path}")
+
+    # only latest 5 mp3 files in public audio dir to save space, delete older ones
+    mp3_files = sorted(public_audio_dir.glob("*.mp3"), key=lambda f: f.stat().st_mtime, reverse=True)
+    for f in mp3_files[5:]:
+        f.unlink()
+        print(f"   已删除旧文件: {f}")
 
     # 6. deploy to Vercel (optional)
     # print("🚀 部署到 Vercel...")

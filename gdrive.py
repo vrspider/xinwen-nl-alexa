@@ -93,6 +93,8 @@ def upload_to_gdrive(file_path: str) -> str:
     Credentials are obtained via :func:`get_credentials`, which may return
     either a service-account or OAuth user token.  The returned object is
     passed directly to ``build`` so it works with both types.
+
+    overwrite behavior: overwrite the file with same name if it already exists in the folder (Drive API will handle deduplication by content)
     """
     credentials = get_credentials()
     service = build('drive', 'v3', credentials=credentials)
