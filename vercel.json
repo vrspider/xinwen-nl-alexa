@@ -2,6 +2,6 @@
   "version": 2,
   "routes": [
     { "src": "/", "dest": "/api/index" },
-    { "src": "/dutchnews/rss", "dest": "/api/flash-briefing" }
+    { "src": "/(.*)/rss", "dest": "/api/flash-briefing" }
   ]
 }

@@ -1,0 +1,22 @@
+{
+  "sites": [
+    {
+      "id": "xinwen-nl",
+      "name": "荷兰新闻",
+      "url": "https://xinwen.nl/",
+      "selectors": {
+        "articles": "main article",
+        "title": "h3, header h3, [class*='title']",
+        "content": "div[itemprop='articleBody'], .excerpt",
+        "updateTime": "body > div.container > div.container.tm-container-2 > div:nth-child(1) > div > p, time[datetime], .update-time"
+      },
+      "outputDir": "news",
+      "publicDir": "news",
+      "rss": {
+        "title": "Xinwen 荷兰新闻",
+        "description": "荷兰新闻每日播报",
+        "link": "https://xinwen.nl/"
+      }
+    }
+  ]
+}

@@ -1,12 +1,11 @@
 """
-主程序 - 每日新闻语音生成
+主程序 - 每日新闻语音生成 (支持多站点配置)
 """
 from datetime import datetime
 from pathlib import Path
 import sys
 import os
 import json
-import shutil
 
 # 添加当前目录到 path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -15,35 +14,46 @@ from scraper import fetch_news, format_news_for_speech, fetch_news_update_time
 from tts import generate_speech_sync
 from gdrive import upload_to_gdrive
 
+CONFIG_FILE = Path(__file__).parent / "sites.json"
 OUTPUT_DIR = Path(__file__).parent / "output"
-OUTPUT_DIR.mkdir(exist_ok=True)
+PUBLIC_DIR = Path(__file__).parent / "public"
 
-OUTPUT_NEWS_DIR = OUTPUT_DIR / "news"
-OUTPUT_NEWS_DIR.mkdir(exist_ok=True)
 
-def main():
-    print(f"[{datetime.now()}] 开始生成新闻语音...")
+def load_config() -> dict:
+    """加载站点配置"""
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def process_site(site: dict, last_update_data: dict) -> bool:
+    """处理单个站点的新闻生成"""
+    site_id = site["id"]
+    site_name = site["name"]
+    output_dir_name = site.get("outputDir", site_id)
+    public_dir_name = site.get("publicDir", site_id)
     
-    # 1. 抓取新闻 
-    # compare the news update time with the last saved time to decide whether to proceed with generation and upload
+    print(f"\n{'='*50}")
+    print(f"📰 处理站点: {site_name}")
+    print(f"{'='*50}")
     
-    last_update_file = OUTPUT_DIR / "last_update.json"
-    last_update_time = None
-    if last_update_file.exists():
-        with open(last_update_file, "r") as f:
-            try:
-                data = json.load(f)
-                last_update_time = data.get("update_time")
-            except json.JSONDecodeError:
-                pass
-
-    print("📰 抓取新闻...")
-    news = fetch_news()
-    news_update_t = fetch_news_update_time()
+    # 1. 抓取新闻
+    print("🔍 抓取新闻...")
+    news = fetch_news(site)
+    news_update_t = fetch_news_update_time(site)
     print(f"   获取到 {len(news)} 条新闻 (更新时间: {news_update_t})")
-    # save the news update time in a local json file for next comparison
-    with open(last_update_file, "w") as f:
-        json.dump({"update_time": news_update_t}, f, ensure_ascii=False, indent=2)
+    
+    # 检查是否需要更新
+    last_time = last_update_data.get(site_id, {}).get("update_time")
+    if last_time == news_update_t and len(news) > 0:
+        print(f"   ⏭️  新闻未更新，跳过生成")
+        return False
+    
+    # 保存更新时间
+    last_update_data[site_id] = {"update_time": news_update_t}
+    
+    if len(news) == 0:
+        print(f"   ⚠️  没有获取到新闻")
+        return False
     
     # 2. 格式化文本
     print("✍️  格式化文本...")
@@ -52,15 +62,18 @@ def main():
     
     # 3. 生成语音
     print("🎙️  生成语音...")
-    # convert date like "2026年03月02日" to "2026-03-02" for filename
     date_str = news_update_t.replace("年", "-").replace("月", "-").replace("日", "")
-    output_path = OUTPUT_NEWS_DIR / f"{date_str}.mp3"
+    
+    # 输出到 output 目录
+    site_output_dir = OUTPUT_DIR / output_dir_name
+    site_output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = site_output_dir / f"{date_str}.mp3"
+    
     mp3_path = generate_speech_sync(text, str(output_path))
     print(f"   已保存: {mp3_path}")
-    # ensure we treat it as a Path for subsequent operations
     mp3_path = Path(mp3_path)
-
-    # 4. 上传到 Google Drive , and overwrite the existing file if it exists (Drive API will handle deduplication by content)
+    
+    # 4. 上传到 Google Drive
     print("☁️  上传至 Google Drive...")
     try:
         path = upload_to_gdrive(str(mp3_path))
@@ -68,34 +81,67 @@ def main():
     except Exception as e:
         print(f"   上传失败: {e}")
     
-    print(f"[{datetime.now()}] 完成!")
-
-    # 5. copy mp3 to public/audio for Vercel hosting
-    public_audio_dir = Path(__file__).parent / "public" / "audio" / "news"
+    # 5. 复制到 public 目录
+    public_audio_dir = PUBLIC_DIR / "audio" / public_dir_name
     public_audio_dir.mkdir(parents=True, exist_ok=True)
     target_path = public_audio_dir / mp3_path.name
     target_path.write_bytes(mp3_path.read_bytes())
     print(f"   已复制到: {target_path}")
-
-    # only latest 5 mp3 files in public audio dir to save space, delete older ones
+    
+    # 只保留最新5个文件
     mp3_files = sorted(public_audio_dir.glob("*.mp3"), key=lambda f: f.stat().st_mtime, reverse=True)
     for f in mp3_files[5:]:
         f.unlink()
         print(f"   已删除旧文件: {f}")
+    
+    return True
 
-    # 6. deploy to Vercel (optional)
-    # print("🚀 部署到 Vercel...")
-    # uncomment the following line when you want to auto-deploy
-    # don't deploy if there are no new items to avoid unnecessary redeployments
-    if len(news) > 0:
-        # deployment: prefer system vercel binary but fallback to npx if not installed
-        import shutil
-        vercel_path = shutil.which("vercel")
-        if not vercel_path:
-            print("⚠️  vercel CLI not found in PATH, attempting npx...")
-            vercel_path = "npx vercel"
-        os.system(f"{vercel_path} --prod")  # execute the chosen command
+
+def main():
+    print(f"[{datetime.now()}] 开始生成新闻语音...")
+    
+    # 加载配置
+    config = load_config()
+    sites = config.get("sites", [])
+    
+    if not sites:
+        print("❌ 没有配置任何站点")
+        return
+    
+    # 加载上次更新时间
+    last_update_file = OUTPUT_DIR / "last_update.json"
+    last_update_data = {}
+    if last_update_file.exists():
+        try:
+            with open(last_update_file, "r", encoding="utf-8") as f:
+                last_update_data = json.load(f)
+        except json.JSONDecodeError:
+            pass
+    
+    # 确保 output 目录存在
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    
+    # 处理每个站点
+    any_updated = False
+    for site in sites:
+        if process_site(site, last_update_data):
+            any_updated = True
+    
+    # 保存更新时间
+    with open(last_update_file, "w", encoding="utf-8") as f:
+        json.dump(last_update_data, f, ensure_ascii=False, indent=2)
+    
+    # 6. 部署到 Vercel
+    if any_updated:
+        print(f"\n🚀 部署到 Vercel...")
+        vercel_path = shutil.which("vercel") if shutil.which("vercel") else "npx vercel"
+        os.system(f"{vercel_path} --prod")
+    else:
+        print(f"\n✅ 没有更新，跳过部署")
+    
+    print(f"\n[{datetime.now()}] 完成!")
 
 
 if __name__ == "__main__":
+    import shutil
     main()

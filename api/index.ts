@@ -1,7 +1,44 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import fs from 'fs';
+import path from 'path';
+
+interface SiteConfig {
+    id: string;
+    name: string;
+    url: string;
+    outputDir: string;
+    publicDir: string;
+    rss: {
+        title: string;
+        description: string;
+        link: string;
+    };
+}
+
+interface Config {
+    sites: SiteConfig[];
+}
+
+function loadConfig(): Config {
+    const configPath = path.join(process.cwd(), "sites.json");
+    const content = fs.readFileSync(configPath, "utf-8");
+    return JSON.parse(content);
+}
 
 export default function handler(request: VercelRequest, response: VercelResponse) {
-  const html = `
+    let config: Config;
+    try {
+        config = loadConfig();
+    } catch (e) {
+        response.status(500).send("Configuration error");
+        return;
+    }
+
+    const sitesHtml = config.sites.map(site => 
+        `<a class="link" href="/${site.id}/rss">${site.name} RSS</a>`
+    ).join("\n");
+
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,10 +69,10 @@ export default function handler(request: VercelRequest, response: VercelResponse
 </head>
 <body>
   <h1>每日荷兰</h1>
-  <a class="link" href="/dutchnews/rss">Dutch News RSS</a>
+  ${sitesHtml}
 </body>
 </html>
 `;
-  response.setHeader('Content-Type', 'text/html');
-  response.send(html);
+    response.setHeader('Content-Type', 'text/html');
+    response.send(html);
 }
