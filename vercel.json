@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/", "destination": "/api/flash-briefing" }
+  "routes": [
+    { "src": "/", "dest": "/api/index" },
+    { "src": "/dutchnews/rss", "dest": "/api/flash-briefing" }
   ]
 }
