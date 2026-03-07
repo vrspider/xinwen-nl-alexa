@@ -18,6 +18,9 @@ from gdrive import upload_to_gdrive
 OUTPUT_DIR = Path(__file__).parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+OUTPUT_NEWS_DIR = OUTPUT_DIR / "news"
+OUTPUT_NEWS_DIR.mkdir(exist_ok=True)
+
 def main():
     print(f"[{datetime.now()}] 开始生成新闻语音...")
     
@@ -51,7 +54,7 @@ def main():
     print("🎙️  生成语音...")
     # convert date like "2026年03月02日" to "2026-03-02" for filename
     date_str = news_update_t.replace("年", "-").replace("月", "-").replace("日", "")
-    output_path = OUTPUT_DIR / f"{date_str}.mp3"
+    output_path = OUTPUT_NEWS_DIR / f"{date_str}.mp3"
     mp3_path = generate_speech_sync(text, str(output_path))
     print(f"   已保存: {mp3_path}")
     # ensure we treat it as a Path for subsequent operations
@@ -68,7 +71,7 @@ def main():
     print(f"[{datetime.now()}] 完成!")
 
     # 5. copy mp3 to public/audio for Vercel hosting
-    public_audio_dir = Path(__file__).parent / "public" / "audio"
+    public_audio_dir = Path(__file__).parent / "public" / "audio" / "news"
     public_audio_dir.mkdir(parents=True, exist_ok=True)
     target_path = public_audio_dir / mp3_path.name
     target_path.write_bytes(mp3_path.read_bytes())

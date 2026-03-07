@@ -60,8 +60,8 @@ export default function handler(
     req: VercelRequest,
     res: VercelResponse
 ) {
-    // scan the public/audio directory for mp3 files
-    const outputDir = path.join(process.cwd(), "public", "audio");
+    // scan the public/audio/news directory for mp3 files
+    const outputDir = path.join(process.cwd(), "public", "audio", "news");
     let items: Array<any> = [];
     try {
         const files = fs.readdirSync(outputDir);
@@ -71,7 +71,7 @@ export default function handler(
             .forEach(f => {
                 const datePart = path.basename(f, ".mp3");
                 const pub = new Date(datePart).toUTCString();
-                const url = `https://xinwen-alexa.vercel.app/audio/${f}`;
+                const url = `https://xinwen-alexa.vercel.app/audio/news/${f}`;
                 let size = 0;
                 try {
                     const stat = fs.statSync(path.join(outputDir, f));
