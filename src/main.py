@@ -6,17 +6,21 @@ from pathlib import Path
 import sys
 import os
 import json
+import shutil
 
-# 添加当前目录到 path
+# 项目根目录
+PROJECT_ROOT = Path(__file__).parent.parent
+
+# 添加 src 目录到 path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from scraper import fetch_news, format_news_for_speech, fetch_news_update_time
 from tts import generate_speech_sync
 from gdrive import upload_to_gdrive
 
-CONFIG_FILE = Path(__file__).parent / "sites.json"
-OUTPUT_DIR = Path(__file__).parent / "output"
-PUBLIC_DIR = Path(__file__).parent / "public"
+CONFIG_FILE = PROJECT_ROOT / "sites.json"
+OUTPUT_DIR = PROJECT_ROOT / "output"
+PUBLIC_DIR = PROJECT_ROOT / "public"
 
 
 def load_config() -> dict:
@@ -62,7 +66,9 @@ def process_site(site: dict, last_update_data: dict) -> bool:
     
     # 3. 生成语音
     print("🎙️  生成语音...")
-    date_str = news_update_t.replace("年", "-").replace("月", "-").replace("日", "")
+    # 格式: "2026-03-08-19:46" -> "2026-3-8"
+    date_part = news_update_t.split("-")[:3]
+    date_str = f"{int(date_part[0])}-{int(date_part[1])}-{int(date_part[2])}"
     
     # 输出到 output 目录
     site_output_dir = OUTPUT_DIR / output_dir_name
@@ -143,5 +149,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import shutil
     main()

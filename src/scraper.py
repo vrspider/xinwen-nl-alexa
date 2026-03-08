@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from typing import List, Dict, Any
+import re
 
 
 def fetch_news(site_config: Dict[str, Any]) -> List[Dict[str, str]]:
@@ -89,10 +90,11 @@ def fetch_news_update_time(site_config: Dict[str, Any]) -> str:
             time_elem = soup.select_one(sel.strip())
             if time_elem:
                 time_text = time_elem.get_text(strip=True)
-                # 提取日期部分 - 假设格式为 "更新时间: 2026年03月02日"
-                if "更新时间" in time_text:
-                    date_part = time_text.split("更新时间:")[-1].strip().split()[0]
-                    return date_part
+                # 格式: "更新时间: 2026年03月08日 星期 日 19:46" -> "2026-03-08-19:46"
+                match = re.search(r"(\d{4})年(\d{2})月(\d{2})日.*?(\d{2}):(\d{2})", time_text)
+                if match:
+                    return f"{match.group(1)}-{match.group(2)}-{match.group(3)}-{match.group(4)}:{match.group(5)}"
+                return time_text
     
     return "未知时间"
 
