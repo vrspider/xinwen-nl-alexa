@@ -18,7 +18,7 @@ from scraper import fetch_news, format_news_for_speech, fetch_news_update_time
 from tts import generate_speech_sync
 from gdrive import upload_to_gdrive
 
-CONFIG_FILE = PROJECT_ROOT / "sites.json"
+CONFIG_FILE = PROJECT_ROOT / "config" / "sites.json"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 PUBLIC_DIR = PROJECT_ROOT / "public"
 

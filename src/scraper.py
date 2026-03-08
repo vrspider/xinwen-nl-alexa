@@ -101,7 +101,7 @@ def fetch_news_update_time(site_config: Dict[str, Any]) -> str:
 
 if __name__ == "__main__":
     import json
-    with open("sites.json", "r") as f:
+    with open("config/sites.json", "r") as f:
         config = json.load(f)
     
     for site in config["sites"]:
