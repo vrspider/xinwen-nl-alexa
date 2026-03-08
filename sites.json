@@ -8,7 +8,7 @@
         "articles": "main article",
         "title": "h3, header h3, [class*='title']",
         "content": "div[itemprop='articleBody'], .excerpt",
-        "updateTime": "body > div.container > div.container.tm-container-2 > div:nth-child(1) > div > p, time[datetime], .update-time"
+        "updateTime": "body > div.container > div.container.tm-container-2 > div:nth-child(1) > div > p"
       },
       "outputDir": "news",
       "publicDir": "news",
