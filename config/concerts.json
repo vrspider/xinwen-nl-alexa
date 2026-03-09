@@ -3,7 +3,7 @@
     {
       "id": "concertgebouw",
       "name": "Royal Concertgebouw",
-      "url": "https://www.concertgebouw.nl/en/concerts-and-tickets?date={current_date}",
+      "url": "https://www.concertgebouw.nl/en/concerts-and-tickets?date={current_date}&format=json",
       "type": "concert_hall",
       "city": "Amsterdam"
     },
@@ -24,7 +24,7 @@
     {
       "id": "de-doelen",
       "name": "De Doelen",
-      "url": "https://www.dedoelen.nl/en/agenda?start={current_date}&end={end_date}#anchorFilters",
+      "url": "https://www.dedoelen.nl/en/agenda?start={current_date}&end={end_date}&format=json",
       "type": "concert_hall",
       "city": "Rotterdam"
     },

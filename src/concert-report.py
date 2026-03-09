@@ -116,7 +116,7 @@ def scrape_concert(url: str) -> str:
     app = FirecrawlApp(api_key=api_key)
     
     actions = [
-        {"action": "wait", "milliseconds": 2000},
+        {"action": "wait", "milliseconds": 5000},
     ]
     
     try:
