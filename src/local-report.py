@@ -186,11 +186,35 @@ def clean_text_for_speech(text: str) -> str:
     return text.strip()
 
 
-def generate_museum_weekly_audio(report_text: str):
-    """生成博物馆周报语音"""
+def generate_speech(text: str, output_path: str, voice: str = "zh-CN-XiaoxiaoNeural") -> str:
+    """生成语音 MP3
+    
+    Args:
+        text: 要转换的文本
+        output_path: 输出文件路径
+        voice: TTS 语音角色 (默认: zh-CN-XiaoxiaoNeural)
+    
+    Returns:
+        生成的 MP3 文件路径
+    """
     import asyncio
     import edge_tts
     
+    async def generate():
+        communicate = edge_tts.Communicate(text, voice=voice)
+        await communicate.save(str(output_path))
+    
+    asyncio.run(generate())
+    return str(output_path)
+
+
+def generate_museum_weekly_audio(report_text: str, voice: str = "zh-CN-XiaoxiaoNeural"):
+    """生成博物馆周报语音
+    
+    Args:
+        report_text: 报告文本内容
+        voice: TTS 语音角色 (默认: zh-CN-XiaoxiaoNeural)
+    """
     # 从内容中提取日期
     date_match = re.search(r'(\d{1,2})月(\d{1,2})日', report_text)
     if date_match:
@@ -229,12 +253,9 @@ def generate_museum_weekly_audio(report_text: str):
     
     print(f"\n🎙️  正在生成语音: {filename}")
     print(f"   文本长度: {len(full_text)} 字符")
+    print(f"   使用语音: {voice}")
     
-    async def generate():
-        communicate = edge_tts.Communicate(full_text, voice="zh-CN-XiaoxiaoNeural")
-        await communicate.save(str(output_path))
-    
-    asyncio.run(generate())
+    generate_speech(full_text, output_path, voice)
     
     print(f"✅ 已生成: {output_path}")
     
@@ -245,7 +266,7 @@ def generate_museum_weekly_audio(report_text: str):
     print(f"   已复制到: {output_dir / filename}")
 
 
-def get_weekly_museum_report(llm: str, model: str = None, search_provider: str = "googlesearch"):
+def get_weekly_museum_report(llm: str, model: str = None, search_provider: str = "googlesearch", voice: str = "zh-CN-XiaoxiaoNeural"):
     from pathlib import Path
     
     # 检查 exhibitions-light.md 是否存在
@@ -326,8 +347,8 @@ def get_weekly_museum_report(llm: str, model: str = None, search_provider: str =
     print("\n--- 报告内容 ---")
     print(report_text)
     
-    # 生成语音
-    generate_museum_weekly_audio(report_text)
+    # 生成语音 (使用指定的语音角色)
+    generate_museum_weekly_audio(report_text, voice)
 
 
 if __name__ == "__main__":
@@ -336,7 +357,9 @@ if __name__ == "__main__":
     parser.add_argument("model", nargs="?", default=None, help="模型名称")
     parser.add_argument("--search", dest="search", default="googlesearch", 
                        choices=["googlesearch", "serpapi"], help="搜索 provider")
+    parser.add_argument("--voice", dest="voice", default="zh-CN-XiaoxiaoNeural",
+                       help="TTS 语音角色 (默认: zh-CN-XiaoxiaoNeural)")
     
     args = parser.parse_args()
     
-    get_weekly_museum_report(args.llm, args.model, args.search)
+    get_weekly_museum_report(args.llm, args.model, args.search, args.voice)
