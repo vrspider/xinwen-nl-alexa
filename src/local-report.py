@@ -240,7 +240,7 @@ def generate_museum_weekly_audio(report_text: str, voice: str = "zh-CN-XiaoxiaoN
     clean_content = clean_text_for_speech(report_text)
     
     # 添加开头语
-    intro = "欢迎收听荷兰博物馆周报。我是 XiaXia，为您播报。"
+    intro = "欢迎收听荷兰博物馆周报。我是 虾虾，为您播报。"
     full_text = intro + "\n\n" + clean_content
     
     # 输出文件名
@@ -349,6 +349,16 @@ def get_weekly_museum_report(llm: str, model: str = None, search_provider: str =
     
     # 生成语音 (使用指定的语音角色)
     generate_museum_weekly_audio(report_text, voice)
+    
+    # 清理临时文件
+    exhibitions_files = [
+        PROJECT_ROOT / "output" / "exhibitions" / "exhibitions.md",
+        PROJECT_ROOT / "output" / "exhibitions" / "exhibitions-light.md"
+    ]
+    for f in exhibitions_files:
+        if f.exists():
+            f.unlink()
+            print(f"🗑️  已删除临时文件: {f}")
 
 
 if __name__ == "__main__":
