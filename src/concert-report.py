@@ -32,14 +32,7 @@ def get_week_dates() -> tuple:
 
 
 def resolve_concert_urls(concerts: list) -> list:
-    """解析演出场馆 URL，替换日期占位符
-    
-    Args:
-        concerts: 演出场馆列表
-        
-    Returns:
-        更新后的场馆列表
-    """
+    """解析演出场馆 URL，替换日期占位符"""
     current_date, end_date = get_week_dates()
     
     for concert in concerts:
@@ -59,8 +52,52 @@ def load_concerts_config() -> list:
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
     concerts = config.get("concerts", [])
-    # 解析 URL 中的日期占位符
     return resolve_concert_urls(concerts)
+
+
+def clean_concerts_markdown(markdown: str) -> str:
+    """清理 markdown，移除不必要的链接和图片，只保留文字内容"""
+    # 移除图片链接
+    markdown = re.sub(r'!\[.*?\]\(.*?\)', '', markdown)
+    
+    # 移除超链接 [text](url) 但保留文字
+    markdown = re.sub(r'\[([^\]]+)\]\(https?://[^)]+\)', r'\1', markdown)
+    
+    # 移除 cookie 相关内容
+    cookie_patterns = [
+        r'We use cookies.*?(?=\n\n|\n[A-Z]|$)',
+        r'Cookie notice.*?(?=\n\n|\n[A-Z]|$)',
+        r'Accept all.*?(?=\n\n|\n[A-Z]|$)',
+        r'Cookie policy.*?(?=\n\n|\n[A-Z]|$)',
+        r'This website uses cookies.*?(?=\n\n|\n[A-Z]|$)',
+        r'By clicking.*?accept.*?(?=\n\n|\n[A-Z]|$)',
+    ]
+    for pattern in cookie_patterns:
+        markdown = re.sub(pattern, '', markdown, flags=re.IGNORECASE | re.DOTALL)
+    
+    # 移除多余的空行
+    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    
+    return markdown.strip()
+
+
+def extract_concert_info(markdown: str) -> str:
+    """从 markdown 中提取演出关键信息"""
+    # 清理 markdown
+    markdown = clean_concerts_markdown(markdown)
+    
+    lines = markdown.split('\n')
+    result_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        if re.match(r'^[\-\*\#\=]+$', line):
+            continue
+        result_lines.append(line)
+    
+    return '\n'.join(result_lines[:50])
 
 
 def scrape_concert(url: str) -> str:
@@ -100,14 +137,7 @@ def scrape_concert(url: str) -> str:
 
 
 def scrape_all_concerts(concerts: list) -> dict:
-    """爬取所有演出场馆页面
-    
-    Args:
-        concerts: 演出场馆列表
-        
-    Returns:
-        {site_id: markdown_content}
-    """
+    """爬取所有演出场馆页面"""
     results = {}
     
     for concert in concerts:
@@ -120,8 +150,10 @@ def scrape_all_concerts(concerts: list) -> dict:
         
         markdown = scrape_concert(url)
         if markdown:
-            results[site_id] = markdown
-            print(f"   ✓ 获取到 {len(markdown)} 字符")
+            # 清理爬取的内容
+            cleaned = clean_concerts_markdown(markdown)
+            results[site_id] = cleaned
+            print(f"   ✓ 获取到 {len(cleaned)} 字符")
         else:
             print(f"   ✗ 爬取失败")
     
@@ -317,9 +349,9 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     print("\n--- 爬取演出信息 ---")
     scraped_data = scrape_all_concerts(concerts)
     
-    # 构建爬取内容
+    # 构建爬取内容（使用轻量版）
     concerts_content = "\n\n---\n\n".join([
-        f"## {c['name']} - {c['city']}\n\n{scraped_data.get(c['id'], '(爬取失败)')}"
+        f"## {c['name']} - {c['city']}\n\n{extract_concert_info(scraped_data.get(c['id'], ''))}"
         for c in concerts
     ])
     
