@@ -1,0 +1,60 @@
+{
+  "concerts": [
+    {
+      "id": "concertgebouw",
+      "name": "Royal Concertgebouw",
+      "url": "https://www.concertgebouw.nl/en",
+      "type": "concert_hall",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "amare",
+      "name": "Amare",
+      "url": "https://www.amare.nl/en",
+      "type": "concert_hall",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "tivoli-vredenburg",
+      "name": "TivoliVredenburg",
+      "url": "https://www.tivoli.nl/en",
+      "type": "concert_hall",
+      "city": "Utrecht"
+    },
+    {
+      "id": "de-doelen",
+      "name": "De Doelen",
+      "url": "https://www.dedoelen.nl/en",
+      "type": "concert_hall",
+      "city": "Rotterdam"
+    },
+    {
+      "id": "paradiso",
+      "name": "Paradiso",
+      "url": "https://www.paradiso.nl/en",
+      "type": "venue",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "melkweg",
+      "name": "Melkweg",
+      "url": "https://www.melkweg.nl/en",
+      "type": "venue",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "dutch-national-ballet",
+      "name": "Dutch National Ballet",
+      "url": "https://www.operaballet.nl/en",
+      "type": "ballet",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "royal-theater-carre",
+      "name": "Royal Theater Carré",
+      "url": "https://www.carre.nl/en",
+      "type": "theater",
+      "city": "Amsterdam"
+    }
+  ]
+}

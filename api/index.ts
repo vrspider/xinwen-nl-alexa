@@ -36,6 +36,8 @@ export default function handler(request: VercelRequest, response: VercelResponse
 
     const museumLink = `<a class="link" href="/exhibitions/museum_weekly.md">博物馆周报</a>`;
     const museumPodcastLink = `<a class="link" href="/exhibitions/rss">博物馆周报 Podcast</a>`;
+    const concertLink = `<a class="link" href="/concerts/concert_weekly.md">演出周报</a>`;
+    const concertPodcastLink = `<a class="link" href="/concerts/rss">演出周报 Podcast</a>`;
 
 const sitesHtml = config.sites.map(site => 
         `<a class="link" href="/${site.id}/rss">${site.name} RSS</a>`
@@ -76,10 +78,15 @@ const sitesHtml = config.sites.map(site =>
   <h1>每日荷兰</h1>
   <h2>新闻</h2>
   ${sitesHtml}
-  <h2>文化</h2>
+  <h2>博物馆</h2>
   <div class="link-row">
     ${museumLink}
     ${museumPodcastLink}
+  </div>
+  <h2>演出</h2>
+  <div class="link-row">
+    ${concertLink}
+    ${concertPodcastLink}
   </div>
 </body>
 </html>

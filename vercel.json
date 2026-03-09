@@ -4,6 +4,8 @@
     { "src": "/", "dest": "/api/index" },
     { "src": "/exhibitions/museum_weekly.md", "dest": "/api/museum-weekly" },
     { "src": "/exhibitions/rss", "dest": "/api/exhibitions-rss" },
+    { "src": "/concerts/concert_weekly.md", "dest": "/api/concerts" },
+    { "src": "/concerts/rss", "dest": "/api/concerts-rss" },
     { "src": "/(.*)/rss", "dest": "/api/flash-briefing" }
   ]
 }
