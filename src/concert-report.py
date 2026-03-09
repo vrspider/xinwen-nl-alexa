@@ -20,11 +20,7 @@ load_dotenv(PROJECT_ROOT / ".env.local")
 
 
 def get_week_dates() -> tuple:
-    """获取本周的开始和结束日期
-    
-    Returns:
-        (current_date, end_date) 格式 YYYY-MM-DD
-    """
+    """获取本周的开始和结束日期"""
     today = datetime.now()
     current_date = today.strftime("%Y-%m-%d")
     end_date = (today + timedelta(days=7)).strftime("%Y-%m-%d")
@@ -56,12 +52,28 @@ def load_concerts_config() -> list:
 
 
 def clean_concerts_markdown(markdown: str) -> str:
-    """清理 markdown，移除不必要的链接和图片，只保留文字内容"""
+    """清理 markdown，移除 cookie、导航、过滤器和图片"""
     # 移除图片链接
     markdown = re.sub(r'!\[.*?\]\(.*?\)', '', markdown)
     
-    # 移除超链接 [text](url) 但保留文字
+    # 移除超链接但保留文字
     markdown = re.sub(r'\[([^\]]+)\]\(https?://[^)]+\)', r'\1', markdown)
+    
+    # 移除导航和过滤器相关的无用内容
+    patterns_to_remove = [
+        r'\[Skip to [^\]]+\]\([^)]+\)',
+        r'\[To the [^\]]+\]\([^)]+\)',
+        r'^#+\s*(filter|agenda|menu|search|login|saved)', 
+        r'####\s*filter.*?(?=\n|$)',
+        r'^\s*\|.*?\|\s*$',  # 表格行
+        r'^\s*-\s+\[',  # 过滤器列表项
+        r'^\s*\[.*?\]',  # 链接行
+        r'^\s*\*+\s*$',  # 列表标记
+        r'^\s*#+\s*$',
+    ]
+    
+    for pattern in patterns_to_remove:
+        markdown = re.sub(pattern, '', markdown, flags=re.MULTILINE | re.IGNORECASE)
     
     # 移除 cookie 相关内容
     cookie_patterns = [
@@ -81,23 +93,58 @@ def clean_concerts_markdown(markdown: str) -> str:
     return markdown.strip()
 
 
-def extract_concert_info(markdown: str) -> str:
+def extract_concert_info(markdown: str, venue_name: str = "") -> str:
     """从 markdown 中提取演出关键信息"""
-    # 清理 markdown
     markdown = clean_concerts_markdown(markdown)
     
     lines = markdown.split('\n')
     result_lines = []
     
+    # 日期模式 - 需要保留的关键词
+    date_keywords = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec',  # 荷兰语月份
+        'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+        'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag',
+        'Today', 'Tomorrow',
+    ]
+    
+    # 需要保留的内容类型
+    keep_patterns = [
+        r'^\s*\*\*[^*]+\*\*',  # 粗体标题（演出名）
+        r'^\s*##\s+',           # 二級标题
+        r'^\s*###\s+',          # 三级标题
+        r'^\s*\d{1,2}:\d{2}',   # 时间
+        r'^\s*(€|From|Price)',   # 价格
+        r'^\s*(Main Hall|Recital Hall|Grote Zaal|Studio)',  # 场馆
+    ]
+    
     for line in lines:
         line = line.strip()
-        if not line or line.startswith('#'):
+        
+        # 跳过空行和无用行
+        if not line:
             continue
         if re.match(r'^[\-\*\#\=]+$', line):
             continue
-        result_lines.append(line)
+        if len(line) < 3:
+            continue
+            
+        # 跳过导航和过滤器行
+        if re.match(r'^(Search|Menu|Login|Filter|Skip|To the)', line, re.IGNORECASE):
+            continue
+        
+        # 检查是否包含日期关键词
+        has_date = any(kw.lower() in line.lower() for kw in date_keywords)
+        
+        # 检查是否匹配保留模式
+        matches_keep = any(re.match(p, line) for p in keep_patterns)
+        
+        # 保留包含日期的行或匹配保留模式的行
+        if has_date or matches_keep:
+            result_lines.append(line)
     
-    return '\n'.join(result_lines[:50])
+    return '\n'.join(result_lines)
 
 
 def scrape_concert(url: str) -> str:
@@ -115,8 +162,11 @@ def scrape_concert(url: str) -> str:
     
     app = FirecrawlApp(api_key=api_key)
     
+    # 更好的 actions: 等待后滚动
     actions = [
-        {"action": "wait", "milliseconds": 5000},
+        {"action": "wait", "milliseconds": 3000},
+        {"action": "scroll", "direction": "down"},
+        {"action": "wait", "milliseconds": 1000},
     ]
     
     try:
@@ -150,8 +200,8 @@ def scrape_all_concerts(concerts: list) -> dict:
         
         markdown = scrape_concert(url)
         if markdown:
-            # 清理爬取的内容
-            cleaned = clean_concerts_markdown(markdown)
+            # 提取关键信息
+            cleaned = extract_concert_info(markdown, name)
             results[site_id] = cleaned
             print(f"   ✓ 获取到 {len(cleaned)} 字符")
         else:
@@ -254,21 +304,13 @@ def generate_with_groq(prompt: str, model: str = "llama-3.1-8b-instant") -> str:
 
 
 def clean_text_for_speech(text: str) -> str:
-    """清理文本，移除 markdown 特殊字符，转换为语音友好格式"""
-    # 移除 # ## 等标题标记（保留标题文字）
+    """清理文本，移除 markdown 特殊字符"""
     text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
-    
-    # 移除 ** 粗体标记（保留文字）
     text = re.sub(r'\*\*', '', text)
-    
-    # 移除 * 斜体/列表标记
-    text = re.sub(r'(?<=[^\n])\*(?=[^\n])', '', text)  # 行内 * 
-    text = re.sub(r'^\s*\*\s+', '', text, flags=re.MULTILINE)  # 列表 * 
-    text = re.sub(r'^\s*-\s+', '', text, flags=re.MULTILINE)  # 列表 - 
-    
-    # 移除多余空白
+    text = re.sub(r'(?<=[^\n])\*(?=[^\n])', '', text)
+    text = re.sub(r'^\s*\*\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\s*-\s+', '', text, flags=re.MULTILINE)
     text = re.sub(r'\n{3,}', '\n\n', text)
-    
     return text.strip()
 
 
@@ -287,7 +329,6 @@ def generate_speech(text: str, output_path: str, voice: str = "zh-CN-XiaoxiaoNeu
 
 def generate_concert_weekly_audio(report_text: str, voice: str = "zh-CN-XiaoxiaoNeural"):
     """生成演出周报语音"""
-    # 从内容中提取日期
     date_match = re.search(r'(\d{1,2})月(\d{1,2})日', report_text)
     if date_match:
         month = date_match.group(1)
@@ -306,17 +347,12 @@ def generate_concert_weekly_audio(report_text: str, voice: str = "zh-CN-Xiaoxiao
             now = datetime.now()
             date_str = f"{now.year}-{now.month}-{now.day}"
     
-    # 清理文本用于语音
     clean_content = clean_text_for_speech(report_text)
-    
-    # 添加开头语
     intro = "欢迎收听荷兰演出周报。我是 XiaXia，为您播报。"
     full_text = intro + "\n\n" + clean_content
     
-    # 输出文件名
     filename = f"concert-weekly-report-{date_str}.mp3"
     
-    # 保存到 public/audio/concerts
     audio_dir = PROJECT_ROOT / "public" / "audio" / "concerts"
     audio_dir.mkdir(parents=True, exist_ok=True)
     output_path = audio_dir / filename
@@ -329,7 +365,6 @@ def generate_concert_weekly_audio(report_text: str, voice: str = "zh-CN-Xiaoxiao
     
     print(f"✅ 已生成: {output_path}")
     
-    # 同时复制到 output 目录
     output_dir = PROJECT_ROOT / "output" / "concerts"
     output_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(str(output_path), output_dir / filename)
@@ -338,28 +373,22 @@ def generate_concert_weekly_audio(report_text: str, voice: str = "zh-CN-Xiaoxiao
 
 def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-YunxiNeural"):
     """生成每周演出报告"""
-    # 加载演出场馆配置
     concerts = load_concerts_config()
-    
-    # 获取日期范围
     current_date, end_date = get_week_dates()
     print(f"📅 日期范围: {current_date} ~ {end_date}")
     
-    # 爬取所有场馆页面
     print("\n--- 爬取演出信息 ---")
     scraped_data = scrape_all_concerts(concerts)
     
-    # 构建爬取内容（使用轻量版）
+    # 构建内容（使用提取后的信息）
     concerts_content = "\n\n---\n\n".join([
-        f"## {c['name']} - {c['city']}\n\n{extract_concert_info(scraped_data.get(c['id'], ''))}"
+        f"## {c['name']} - {c['city']}\n\n{scraped_data.get(c['id'], '(无数据)')}"
         for c in concerts
     ])
     
-    # 获取当前周信息
     today = datetime.now()
     current_week = f"{today.year}年{today.month}月第{(today.day - 1) // 7 + 1}周"
     
-    # 构造 Prompt
     prompt = f"""
     以下是荷兰主要演出场馆本周的演出信息：
     
@@ -378,7 +407,6 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     请使用中文。只列出在 {current_date} 到 {end_date} 期间确实有演出的活动。
     """
 
-    # 根据 LLM 类型调用
     if llm == "openai":
         model = model or "gpt-4o-mini"
         report_text = generate_with_openai(prompt, model)
@@ -395,7 +423,6 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
         print(f"未知 LLM 类型: {llm}")
         sys.exit(1)
     
-    # 保存到文件
     output_file = PROJECT_ROOT / "public" / "concerts" / "concert_weekly.md"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
@@ -405,7 +432,6 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     print("\n--- 报告内容 ---")
     print(report_text)
     
-    # 生成语音
     generate_concert_weekly_audio(report_text, voice)
 
 
