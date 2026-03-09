@@ -3,7 +3,7 @@
     {
       "id": "concertgebouw",
       "name": "Royal Concertgebouw",
-      "url": "https://www.concertgebouw.nl/en",
+      "url": "https://www.concertgebouw.nl/en/concerts-and-tickets?date={current_date}",
       "type": "concert_hall",
       "city": "Amsterdam"
     },
@@ -17,14 +17,14 @@
     {
       "id": "tivoli-vredenburg",
       "name": "TivoliVredenburg",
-      "url": "https://www.tivoli.nl/en",
+      "url": "https://www.tivolivredenburg.nl/agenda?weekend=1",
       "type": "concert_hall",
       "city": "Utrecht"
     },
     {
       "id": "de-doelen",
       "name": "De Doelen",
-      "url": "https://www.dedoelen.nl/en",
+      "url": "https://www.dedoelen.nl/en/agenda?start={current_date}&end={end_date}#anchorFilters",
       "type": "concert_hall",
       "city": "Rotterdam"
     },
@@ -36,16 +36,9 @@
       "city": "Amsterdam"
     },
     {
-      "id": "melkweg",
-      "name": "Melkweg",
-      "url": "https://www.melkweg.nl/en",
-      "type": "venue",
-      "city": "Amsterdam"
-    },
-    {
       "id": "dutch-national-ballet",
       "name": "Dutch National Ballet",
-      "url": "https://www.operaballet.nl/en",
+      "url": "https://www.operaballet.nl/en/program",
       "type": "ballet",
       "city": "Amsterdam"
     },

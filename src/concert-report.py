@@ -11,7 +11,7 @@ import shutil
 import json
 import argparse
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # 加载 .env.local
@@ -19,12 +19,48 @@ PROJECT_ROOT = Path(__file__).parent.parent
 load_dotenv(PROJECT_ROOT / ".env.local")
 
 
+def get_week_dates() -> tuple:
+    """获取本周的开始和结束日期
+    
+    Returns:
+        (current_date, end_date) 格式 YYYY-MM-DD
+    """
+    today = datetime.now()
+    current_date = today.strftime("%Y-%m-%d")
+    end_date = (today + timedelta(days=7)).strftime("%Y-%m-%d")
+    return current_date, end_date
+
+
+def resolve_concert_urls(concerts: list) -> list:
+    """解析演出场馆 URL，替换日期占位符
+    
+    Args:
+        concerts: 演出场馆列表
+        
+    Returns:
+        更新后的场馆列表
+    """
+    current_date, end_date = get_week_dates()
+    
+    for concert in concerts:
+        url = concert.get("url", "")
+        if "{current_date}" in url:
+            url = url.replace("{current_date}", current_date)
+        if "{end_date}" in url:
+            url = url.replace("{end_date}", end_date)
+        concert["url"] = url
+    
+    return concerts
+
+
 def load_concerts_config() -> list:
     """加载演出场馆配置"""
     config_path = PROJECT_ROOT / "config" / "concerts.json"
     with open(config_path, "r", encoding="utf-8") as f:
         config = json.load(f)
-    return config.get("concerts", [])
+    concerts = config.get("concerts", [])
+    # 解析 URL 中的日期占位符
+    return resolve_concert_urls(concerts)
 
 
 def generate_with_openai(prompt: str, model: str = "gpt-4o-mini") -> str:
@@ -224,11 +260,15 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     # 加载演出场馆配置
     concerts = load_concerts_config()
     
+    # 获取日期范围
+    current_date, end_date = get_week_dates()
+    print(f"📅 日期范围: {current_date} ~ {end_date}")
+    
     # 获取当前周信息
     today = datetime.now()
     current_week = f"{today.year}年{today.month}月第{(today.day - 1) // 7 + 1}周"
     
-    # 构建场馆列表信息
+    # 构建场馆列表信息（包含解析后的 URL）
     venues_info = "\n".join([
         f"- {c['name']} ({c['city']}): {c['url']}"
         for c in concerts
@@ -236,13 +276,11 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     
     # 构造 Prompt
     prompt = f"""
-    以下是荷兰主要的演出场馆列表：
+    以下是荷兰主要的演出场馆列表及其本周的演出页面 URL：
     
     {venues_info}
     
-    请根据以上场馆信息，生成一份关于{current_week}荷兰演出活动的周报。
-    
-    你可以通过搜索获取这些场馆本周的演出信息，或者基于以下格式生成一份参考周报：
+    请根据以上场馆的 URL，搜索或访问获取{current_week}期间的演出信息，生成一份荷兰演出活动的周报。
     
     输出格式：
     ## [演出名称] - [场馆名]
@@ -252,7 +290,7 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     - **类型**: (音乐会/芭蕾/戏剧/流行音乐等)
     ---
     
-    请使用中文。确保信息准确，不要虚构具体的演出日期和名称。
+    请使用中文。确保信息准确。
     """
 
     # 根据 LLM 类型调用
