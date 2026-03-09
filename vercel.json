@@ -3,6 +3,7 @@
   "routes": [
     { "src": "/", "dest": "/api/index" },
     { "src": "/exhibitions/museum_weekly.md", "dest": "/api/museum-weekly" },
+    { "src": "/exhibitions/rss", "dest": "/api/exhibitions-rss" },
     { "src": "/(.*)/rss", "dest": "/api/flash-briefing" }
   ]
 }

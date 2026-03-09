@@ -35,6 +35,7 @@ export default function handler(request: VercelRequest, response: VercelResponse
     }
 
     const museumLink = `<a class="link" href="/exhibitions/museum_weekly.md">博物馆周报</a>`;
+    const museumPodcastLink = `<a class="link" href="/exhibitions/rss">博物馆周报 Podcast</a>`;
 
 const sitesHtml = config.sites.map(site => 
         `<a class="link" href="/${site.id}/rss">${site.name} RSS</a>`
@@ -67,13 +68,19 @@ const sitesHtml = config.sites.map(site =>
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .link:hover { background: #f0f0f0; }
+    .link-row { display: flex; gap: 10px; }
+    .link-row .link { flex: 1; }
   </style>
 </head>
 <body>
   <h1>每日荷兰</h1>
-  <h2>其他</h2>
-  ${museumLink}
+  <h2>新闻</h2>
   ${sitesHtml}
+  <h2>文化</h2>
+  <div class="link-row">
+    ${museumLink}
+    ${museumPodcastLink}
+  </div>
 </body>
 </html>
 `;

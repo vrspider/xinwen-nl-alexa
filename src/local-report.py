@@ -9,8 +9,11 @@
 """
 import os
 import sys
+import re
+import shutil
 import argparse
 from pathlib import Path
+from datetime import datetime
 from dotenv import load_dotenv
 
 # 加载 .env.local
@@ -164,6 +167,84 @@ def generate_with_groq(prompt: str, model: str = "llama-3.1-8b-instant") -> str:
     return response.choices[0].message.content
 
 
+def clean_text_for_speech(text: str) -> str:
+    """清理文本，移除 markdown 特殊字符，转换为语音友好格式"""
+    # 移除 # ## 等标题标记（保留标题文字）
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    
+    # 移除 ** 粗体标记（保留文字）
+    text = re.sub(r'\*\*', '', text)
+    
+    # 移除 * 斜体/列表标记
+    text = re.sub(r'(?<=[^\n])\*(?=[^\n])', '', text)  # 行内 * 
+    text = re.sub(r'^\s*\*\s+', '', text, flags=re.MULTILINE)  # 列表 * 
+    text = re.sub(r'^\s*-\s+', '', text, flags=re.MULTILINE)  # 列表 - 
+    
+    # 移除多余空白
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text.strip()
+
+
+def generate_museum_weekly_audio(report_text: str):
+    """生成博物馆周报语音"""
+    import asyncio
+    import edge_tts
+    
+    # 从内容中提取日期
+    date_match = re.search(r'(\d{1,2})月(\d{1,2})日', report_text)
+    if date_match:
+        month = date_match.group(1)
+        day = date_match.group(2)
+        # 尝试获取年份
+        year_match = re.search(r'(\d{4})年', report_text)
+        year = year_match.group(1) if year_match else str(datetime.now().year)
+        date_str = f"{year}-{month}-{day}"
+    else:
+        # 尝试匹配日期范围 "2026年3月8日至"
+        range_match = re.search(r'(\d{4})年(\d{1,2})月(\d{1,2})日至', report_text)
+        if range_match:
+            year = range_match.group(1)
+            month = range_match.group(2)
+            day = range_match.group(3)
+            date_str = f"{year}-{month}-{day}"
+        else:
+            now = datetime.now()
+            date_str = f"{now.year}-{now.month}-{now.day}"
+    
+    # 清理文本用于语音
+    clean_content = clean_text_for_speech(report_text)
+    
+    # 添加开头语
+    intro = "欢迎收听荷兰博物馆周报。我是 XiaXia，为您播报。"
+    full_text = intro + "\n\n" + clean_content
+    
+    # 输出文件名
+    filename = f"museum-weekly-report-{date_str}.mp3"
+    
+    # 保存到 public/audio/exhibitions
+    audio_dir = PROJECT_ROOT / "public" / "audio" / "exhibitions"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    output_path = audio_dir / filename
+    
+    print(f"\n🎙️  正在生成语音: {filename}")
+    print(f"   文本长度: {len(full_text)} 字符")
+    
+    async def generate():
+        communicate = edge_tts.Communicate(full_text, voice="zh-CN-XiaoxiaoNeural")
+        await communicate.save(str(output_path))
+    
+    asyncio.run(generate())
+    
+    print(f"✅ 已生成: {output_path}")
+    
+    # 同时复制到 output 目录
+    output_dir = PROJECT_ROOT / "output" / "exhibitions"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(str(output_path), output_dir / filename)
+    print(f"   已复制到: {output_dir / filename}")
+
+
 def get_weekly_museum_report(llm: str, model: str = None, search_provider: str = "googlesearch"):
     from pathlib import Path
     
@@ -186,7 +267,6 @@ def get_weekly_museum_report(llm: str, model: str = None, search_provider: str =
     # search_results = get_search_results(query, search_provider)
 
     # 获取当前周信息
-    from datetime import datetime
     today = datetime.now()
     current_week = f"{today.year}年{today.month}月第{(today.day - 1) // 7 + 1}周"
     
@@ -237,13 +317,17 @@ def get_weekly_museum_report(llm: str, model: str = None, search_provider: str =
         sys.exit(1)
     
     # 保存到文件
-    output_file = PROJECT_ROOT / "museum_weekly.md"
+    output_file = PROJECT_ROOT / "public" / "exhibitions" / "museum_weekly.md"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(report_text)
     
     print(f"✅ 本周博物馆周报已生成: {output_file}")
     print("\n--- 报告内容 ---")
     print(report_text)
+    
+    # 生成语音
+    generate_museum_weekly_audio(report_text)
 
 
 if __name__ == "__main__":
