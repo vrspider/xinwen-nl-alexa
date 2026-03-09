@@ -63,6 +63,71 @@ def load_concerts_config() -> list:
     return resolve_concert_urls(concerts)
 
 
+def scrape_concert(url: str) -> str:
+    """使用 Firecrawl 爬取单个演出页面"""
+    try:
+        from firecrawl import FirecrawlApp
+    except ImportError:
+        print("firecrawl not installed. Run: pip install firecrawl-py")
+        return ""
+    
+    api_key = os.environ.get("FIRECRAWL_API_KEY")
+    if not api_key:
+        print("错误: 未找到 FIRECRAWL_API_KEY")
+        return ""
+    
+    app = FirecrawlApp(api_key=api_key)
+    
+    actions = [
+        {"action": "wait", "milliseconds": 2000},
+    ]
+    
+    try:
+        result = app.scrape(
+            url=url, 
+            formats=['markdown'],
+            block_ads=True,
+            actions=actions
+        )
+        if result and hasattr(result, 'markdown'):
+            return result.markdown
+        elif isinstance(result, dict):
+            return result.get('markdown', '')
+        return ""
+    except Exception as e:
+        print(f"   爬取失败: {e}")
+        return ""
+
+
+def scrape_all_concerts(concerts: list) -> dict:
+    """爬取所有演出场馆页面
+    
+    Args:
+        concerts: 演出场馆列表
+        
+    Returns:
+        {site_id: markdown_content}
+    """
+    results = {}
+    
+    for concert in concerts:
+        site_id = concert.get("id")
+        name = concert.get("name")
+        url = concert.get("url")
+        
+        print(f"🔍 爬取: {name}")
+        print(f"   URL: {url}")
+        
+        markdown = scrape_concert(url)
+        if markdown:
+            results[site_id] = markdown
+            print(f"   ✓ 获取到 {len(markdown)} 字符")
+        else:
+            print(f"   ✗ 爬取失败")
+    
+    return results
+
+
 def generate_with_openai(prompt: str, model: str = "gpt-4o-mini") -> str:
     """使用 OpenAI 生成内容"""
     from openai import OpenAI
@@ -176,16 +241,7 @@ def clean_text_for_speech(text: str) -> str:
 
 
 def generate_speech(text: str, output_path: str, voice: str = "zh-CN-XiaoxiaoNeural") -> str:
-    """生成语音 MP3
-    
-    Args:
-        text: 要转换的文本
-        output_path: 输出文件路径
-        voice: TTS 语音角色 (默认: zh-CN-XiaoxiaoNeural)
-    
-    Returns:
-        生成的 MP3 文件路径
-    """
+    """生成语音 MP3"""
     import asyncio
     import edge_tts
     
@@ -198,23 +254,16 @@ def generate_speech(text: str, output_path: str, voice: str = "zh-CN-XiaoxiaoNeu
 
 
 def generate_concert_weekly_audio(report_text: str, voice: str = "zh-CN-XiaoxiaoNeural"):
-    """生成演出周报语音
-    
-    Args:
-        report_text: 报告文本内容
-        voice: TTS 语音角色 (默认: zh-CN-XiaoxiaoNeural)
-    """
+    """生成演出周报语音"""
     # 从内容中提取日期
     date_match = re.search(r'(\d{1,2})月(\d{1,2})日', report_text)
     if date_match:
         month = date_match.group(1)
         day = date_match.group(2)
-        # 尝试获取年份
         year_match = re.search(r'(\d{4})年', report_text)
         year = year_match.group(1) if year_match else str(datetime.now().year)
         date_str = f"{year}-{month}-{day}"
     else:
-        # 尝试匹配日期范围
         range_match = re.search(r'(\d{4})年(\d{1,2})月(\d{1,2})日至', report_text)
         if range_match:
             year = range_match.group(1)
@@ -264,23 +313,27 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     current_date, end_date = get_week_dates()
     print(f"📅 日期范围: {current_date} ~ {end_date}")
     
+    # 爬取所有场馆页面
+    print("\n--- 爬取演出信息 ---")
+    scraped_data = scrape_all_concerts(concerts)
+    
+    # 构建爬取内容
+    concerts_content = "\n\n---\n\n".join([
+        f"## {c['name']} - {c['city']}\n\n{scraped_data.get(c['id'], '(爬取失败)')}"
+        for c in concerts
+    ])
+    
     # 获取当前周信息
     today = datetime.now()
     current_week = f"{today.year}年{today.month}月第{(today.day - 1) // 7 + 1}周"
     
-    # 构建场馆列表信息（包含解析后的 URL）
-    venues_info = "\n".join([
-        f"- {c['name']} ({c['city']}): {c['url']}"
-        for c in concerts
-    ])
-    
     # 构造 Prompt
     prompt = f"""
-    以下是荷兰主要的演出场馆列表及其本周的演出页面 URL：
+    以下是荷兰主要演出场馆本周的演出信息：
     
-    {venues_info}
+    {concerts_content}
     
-    请根据以上场馆的 URL，搜索或访问获取{current_week}期间的演出信息，生成一份荷兰演出活动的周报。
+    请根据以上信息，生成一份关于{current_week}荷兰演出活动的周报。
     
     输出格式：
     ## [演出名称] - [场馆名]
@@ -290,7 +343,7 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     - **类型**: (音乐会/芭蕾/戏剧/流行音乐等)
     ---
     
-    请使用中文。确保信息准确。
+    请使用中文。只列出在 {current_date} 到 {end_date} 期间确实有演出的活动。
     """
 
     # 根据 LLM 类型调用
@@ -316,11 +369,11 @@ def get_weekly_concert_report(llm: str, model: str = None, voice: str = "zh-CN-Y
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(report_text)
     
-    print(f"✅ 本周演出周报已生成: {output_file}")
+    print(f"\n✅ 本周演出周报已生成: {output_file}")
     print("\n--- 报告内容 ---")
     print(report_text)
     
-    # 生成语音 (使用指定的语音角色)
+    # 生成语音
     generate_concert_weekly_audio(report_text, voice)
 
 
