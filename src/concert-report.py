@@ -51,7 +51,7 @@ def load_concerts_config() -> list:
     return resolve_concert_urls(concerts)
 
 
-def clean_concerts_markdown(markdown: str) -> str:
+def clean_concerts_markdown(markdown: str, venue_id: str = "") -> str:
     """清理 markdown，移除 cookie、导航、过滤器和图片"""
     # 移除图片链接
     markdown = re.sub(r'!\[.*?\]\(.*?\)', '', markdown)
