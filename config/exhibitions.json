@@ -1,0 +1,116 @@
+{
+  "exhibitions": [
+    {
+      "id": "rijksmuseum",
+      "name": "Rijksmuseum",
+      "url": "https://www.rijksmuseum.nl/en/whats-on",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "van-gogh-museum",
+      "name": "Van Gogh Museum",
+      "url": "https://www.vangoghmuseum.nl/en",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "stedelijk",
+      "name": "Stedelijk Museum Amsterdam",
+      "url": "https://www.stedelijk.nl/en/exhibitions",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "mauritshuis",
+      "name": "Mauritshuis",
+      "url": "https://www.mauritshuis.nl/en/what-s-on",
+      "type": "museum",
+      "city": "Den Haag"
+    },
+    {
+      "id": "kunsthal-rotterdam",
+      "name": "Kunsthal Rotterdam",
+      "url": "https://www.kunsthal.nl/en/",
+      "type": "museum",
+      "city": "Rotterdam"
+    },
+    {
+      "id": "kroller-muller",
+      "name": "Kr\u00f6ller-M\u00fcller Museum",
+      "url": "https://krollermuller.nl/en/exhibitions",
+      "type": "museum",
+      "city": "Otterlo"
+    },
+    {
+      "id": "scheepvaartmuseum",
+      "name": "Het Scheepvaartmuseum",
+      "url": "https://www.hetscheepvaartmuseum.com/whats-on/exhibitions",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "naturalis",
+      "name": "Naturalis Biodiversity Center",
+      "url": "https://www.naturalis.nl/en/museum/whats-on",
+      "type": "museum",
+      "city": "Leiden"
+    },
+    {
+      "id": "teylers-museum",
+      "name": "Teylers Museum",
+      "url": "https://teylersmuseum.nl/en/what-s-on",
+      "type": "museum",
+      "city": "Haarlem"
+    },
+    {
+      "id": "voorlinden",
+      "name": "Museum Voorlinden",
+      "url": "https://www.voorlinden.nl/?lang=en",
+      "type": "museum",
+      "city": "Wassenaar"
+    },
+    {
+      "id": "eye-filmmuseum",
+      "name": "Eye Filmmuseum",
+      "url": "https://www.eyefilm.nl/en",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "kunstmuseum-den-haag",
+      "name": "Kunstmuseum Den Haag",
+      "url": "https://www.kunstmuseum.nl/en/exhibitions",
+      "type": "museum",
+      "city": "Den Haag"
+    },
+    {
+      "id": "boijmans",
+      "name": "Museum Boijmans Van Beuningen",
+      "url": "https://www.boijmans.nl/en",
+      "type": "museum",
+      "city": "Rotterdam"
+    },
+    {
+      "id": "centraal-museum",
+      "name": "Centraal Museum",
+      "url": "https://www.centraalmuseum.nl/en/now",
+      "type": "museum",
+      "city": "Utrecht"
+    },
+    {
+      "id": "wereldmuseum-amsterdam",
+      "name": "Wereldmuseum Amsterdam",
+      "url": "https://amsterdam.wereldmuseum.nl/en/whats-on?status=1",
+      "type": "museum",
+      "city": "Amsterdam"
+    },
+    {
+      "id": "Museum card",
+      "name": "Dutch museums",
+      "url": "https://www.museum.nl/en/see-and-do/events?mv-PageIndex=0&mv-TargetAges=Adults",
+      "type": "museum",
+      "city": "Netherland"
+    }
+  ]
+}

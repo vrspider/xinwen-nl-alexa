@@ -1,5 +1,6 @@
 .vercel
 public/audio
+public/exhibitions
 .keys
 # credential files
 client_secrets.json

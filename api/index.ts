@@ -34,7 +34,9 @@ export default function handler(request: VercelRequest, response: VercelResponse
         return;
     }
 
-    const sitesHtml = config.sites.map(site => 
+    const museumLink = `<a class="link" href="/exhibitions/museum_weekly.md">博物馆周报</a>`;
+
+const sitesHtml = config.sites.map(site => 
         `<a class="link" href="/${site.id}/rss">${site.name} RSS</a>`
     ).join("\n");
 
@@ -69,6 +71,8 @@ export default function handler(request: VercelRequest, response: VercelResponse
 </head>
 <body>
   <h1>每日荷兰</h1>
+  <h2>其他</h2>
+  ${museumLink}
   ${sitesHtml}
 </body>
 </html>
