@@ -27,7 +27,7 @@ interface Config {
 }
 
 function loadConfig(): Config {
-    const configPath = path.join(process.cwd(), "sites.json");
+    const configPath = path.join(process.cwd(), "config/sites.json");
     const content = fs.readFileSync(configPath, "utf-8");
     return JSON.parse(content);
 }

@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/", "dest": "/api/index" },
+    { "src": "/exhibitions/museum_weekly.md", "dest": "/api/museum-weekly" },
     { "src": "/(.*)/rss", "dest": "/api/flash-briefing" }
   ]
 }
