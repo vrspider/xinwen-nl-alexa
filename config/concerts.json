@@ -10,7 +10,7 @@
     {
       "id": "amare",
       "name": "Amare",
-      "url": "https://www.amare.nl/en",
+      "url": "https://www.amare.nl/en/agenda",
       "type": "concert_hall",
       "city": "Den Haag"
     },
@@ -31,7 +31,7 @@
     {
       "id": "paradiso",
       "name": "Paradiso",
-      "url": "https://www.paradiso.nl/en",
+      "url": "https://www.paradiso.nl/en/agenda",
       "type": "venue",
       "city": "Amsterdam"
     },
@@ -45,7 +45,7 @@
     {
       "id": "royal-theater-carre",
       "name": "Royal Theater Carré",
-      "url": "https://www.carre.nl/en",
+      "url": "https://www.carre.nl/en/agenda",
       "type": "theater",
       "city": "Amsterdam"
     }
