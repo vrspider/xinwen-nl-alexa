@@ -1,68 +1,109 @@
 # xinwen-nl-alexa
 
-荷兰新闻语音 MP3 定时生成器
+Dutch news → Chinese audio MP3 generator.
 
-## 功能
+## What It Does
 
-- 每日自动抓取 xinwen.nl 新闻
-- 转换为中文语音 MP3
-- 上传到 Google Drive
+- Daily auto-scrape xinwen.nl Dutch news
+- Convert to Chinese voice MP3 using TTS
+- Upload to Google Drive
 
-## 快速开始
+## Quick Start
 
-### 1. 安装依赖
+### 1. Install Dependencies
 
 ```bash
+# Create virtual environment
 python3 -m venv venv
+
+# Activate
 source venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. 配置 Google Drive
+### 2. Configure Google Drive
 
-项目支持两种认证方法; 二选一即可：
+Two authentication methods (choose one):
 
-#### 1. 使用 Service Account（默认）
+#### Option A: Service Account (default)
 
-1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
-2. 创建项目 → 启用 Google Drive API
-3. 创建 Service Account → 下载 JSON 凭证
-4. 将凭证重命名为 `credentials.json` 放到项目根目录
-5. 分享目标文件夹给 Service Account 邮箱（赋予编辑权限）
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create project → Enable Google Drive API
+3. Create Service Account → Download JSON credentials
+4. Rename to `credentials.json` in project root
+5. Share target folder with Service Account email (editor permissions)
 
-> 注意：服务账号自身没有存储配额，因此目标文件夹必须位于一个“共享云盘"(shared drive)。
+> Note: Service account has no storage quota, so target folder must be in a Shared Drive.
 
-#### 2. 使用 OAuth 用户授权
+#### Option B: OAuth User Authorization
 
-1. 在 Cloud Console 开启 Drive API，同样创建一个 OAuth 2.0 客户端 ID
-   （应用类型选择 "桌面应用"）。
-2. 下载生成的 `client_secrets.json` 文件到项目根目录。
-3. 首次运行脚本时会自动弹出浏览器请求登录，凭证会保存在
-   `~/.gdrive_token.pickle` 中供后续使用。
+1. Enable Google Drive API in Cloud Console
+2. Create OAuth 2.0 Client ID (Desktop app type)
+3. Download `client_secrets.json` to project root
+4. First run will open browser for login
+5. Credentials saved to `~/.gdrive_token.pickle`
 
-两种方式都可以与脚本中的 `FOLDER_ID` 变量搭配使用，后者
-在不用共享云盘的情况下直接使用个人 Drive 配额更方便。
-### 3. 测试运行
+### 3. Run
 
 ```bash
 python main.py
 ```
 
-### 4. 设置定时任务 (cron)
+### 4. Set Up Cron Job
 
 ```bash
-# 每天早上 8 点运行
+# Edit crontab
+crontab -e
+
+# Run daily at 8am
 0 8 * * * /path/to/venv/bin/python /path/to/main.py >> /path/to/cron.log 2>&1
 ```
 
-## 文件结构
+## Project Structure
 
 ```
-├── scraper.py      # 新闻爬虫
-├── tts.py         # 语音合成
-├── gdrive.py      # Google Drive 上传
-├── main.py        # 主程序入口
-├── credentials.json  # Google 凭证 (需要自己下载)
-├── output/        # 生成的 MP3 文件
+xinwen-nl-alexa/
+├── src/              # Source code
+│   ├── scraper.py    # News scraper
+│   ├── tts.py       # TTS synthesis
+│   ├── gdrive.py    # Google Drive upload
+│   └── main.py      # Main entry
+├── api/              # Flask API (if needed)
+├── config/           # Configuration files
+├── output/           # Generated MP3 files
+├── public/           # Static web files
+├── .keys/            # API keys
 └── requirements.txt
+```
+
+## Environment Variables
+
+Create `.env.local` or set these:
+
+```bash
+# Google Drive Folder ID
+FOLDER_ID=your_folder_id
+
+# TTS Voice (optional)
+VOICE_NAME=zh-CN-XiaoxiaoNeural
+```
+
+## Output
+
+- MP3 files saved to: `output/`
+- Also uploaded to Google Drive folder
+
+## Troubleshooting
+
+```bash
+# Check logs
+tail -f cron.log
+
+# Test run manually
+python main.py --debug
+
+# Verify GDrive credentials
+python -c "from src.gdrive import GDrive; print('OK')"
 ```
