@@ -94,9 +94,9 @@ def process_site(site: dict, last_update_data: dict) -> bool:
     target_path.write_bytes(mp3_path.read_bytes())
     print(f"   已复制到: {target_path}")
     
-    # 只保留最新5个文件
+    # 只保留最新4个文件
     mp3_files = sorted(public_audio_dir.glob("*.mp3"), key=lambda f: f.stat().st_mtime, reverse=True)
-    for f in mp3_files[5:]:
+    for f in mp3_files[4:]:
         f.unlink()
         print(f"   已删除旧文件: {f}")
     
