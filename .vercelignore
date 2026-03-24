@@ -19,4 +19,7 @@ output/
 README.md
 
 src/
+src/*.py
+src/**/*.py
+*.py
 test/scripts/
